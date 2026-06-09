@@ -11,6 +11,8 @@ const sanitizeImagePath = (img) => {
   return img;
 };
 
+const getImageUrl = (file) => file.path || `/uploads/${file.filename}`;
+
 const getProducts = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page, 10) || 1;
@@ -170,7 +172,7 @@ const createProduct = async (req, res, next) => {
     let images = [];
 
     if (req.files && req.files.length > 0) {
-      images = req.files.map((file) => `/uploads/${file.filename}`);
+      images = req.files.map(getImageUrl);
     }
 
     const productData = {
@@ -238,7 +240,7 @@ const updateProduct = async (req, res, next) => {
     const hasNew = req.files && req.files.length > 0;
     if (hasNew || existingImages.length > 0) {
       const newImages = hasNew
-        ? req.files.map((file) => `/uploads/${file.filename}`)
+        ? req.files.map(getImageUrl)
         : [];
       req.body.images = [...existingImages, ...newImages].map(sanitizeImagePath);
     }

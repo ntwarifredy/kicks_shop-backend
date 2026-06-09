@@ -12,6 +12,9 @@ const config = {
   fromName: process.env.FROM_NAME || 'KicksShop',
   stripeSecretKey: process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder',
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || 'whsec_placeholder',
+  cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
+  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || '',
+  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || '',
 };
 
 module.exports = config;
