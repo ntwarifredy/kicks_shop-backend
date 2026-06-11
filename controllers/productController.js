@@ -171,7 +171,11 @@ const createProduct = async (req, res, next) => {
   try {
     let images = [];
 
-    if (req.files && req.files.length > 0) {
+    if (req.body.imageUrls) {
+      images = Array.isArray(req.body.imageUrls)
+        ? req.body.imageUrls
+        : [req.body.imageUrls];
+    } else if (req.files && req.files.length > 0) {
       images = req.files.map(getImageUrl);
     }
 
@@ -179,6 +183,7 @@ const createProduct = async (req, res, next) => {
       ...req.body,
       images,
     };
+    delete productData.imageUrls;
 
     if (productData.price) productData.price = Number(productData.price);
     if (productData.discountPrice)
@@ -237,13 +242,19 @@ const updateProduct = async (req, res, next) => {
     const existingImages = req.body.existingImages
       ? (Array.isArray(req.body.existingImages) ? req.body.existingImages : [req.body.existingImages])
       : [];
-    const hasNew = req.files && req.files.length > 0;
-    if (hasNew || existingImages.length > 0) {
-      const newImages = hasNew
+    const hasNewFiles = req.files && req.files.length > 0;
+    const hasNewUrls = req.body.imageUrls && (Array.isArray(req.body.imageUrls) ? req.body.imageUrls.length > 0 : true);
+
+    if (hasNewUrls || hasNewFiles || existingImages.length > 0) {
+      const newImages = hasNewFiles
         ? req.files.map(getImageUrl)
         : [];
-      req.body.images = [...existingImages, ...newImages].map(sanitizeImagePath);
+      const urlImages = hasNewUrls
+        ? (Array.isArray(req.body.imageUrls) ? req.body.imageUrls : [req.body.imageUrls])
+        : [];
+      req.body.images = [...existingImages, ...newImages, ...urlImages].map(sanitizeImagePath);
     }
+    delete req.body.imageUrls;
 
     if (req.body.price) req.body.price = Number(req.body.price);
     if (req.body.discountPrice)

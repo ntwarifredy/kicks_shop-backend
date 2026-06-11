@@ -1,11 +1,38 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const config = require('../config/config');
 
 const useCloudinary = config.cloudinaryCloudName && config.cloudinaryApiKey && config.cloudinaryApiSecret;
 
 let upload;
+
+function findWritableDir() {
+  const candidates = [
+    path.join(fs.realpathSync(__dirname), '..', 'uploads'),
+    path.resolve(process.cwd(), 'uploads'),
+    path.join(os.tmpdir(), 'kicks-shop-uploads'),
+  ];
+
+  for (const dir of candidates) {
+    try {
+      fs.mkdirSync(dir, { recursive: true, mode: 0o755 });
+      fs.accessSync(dir, fs.constants.W_OK);
+      console.log('[upload] Using directory:', dir);
+      return dir;
+    } catch (err) {
+      console.log('[upload] Skipping', dir, '-', err.message);
+    }
+  }
+
+  const fallback = candidates[candidates.length - 1];
+  console.error('[upload] All directories failed, using fallback:', fallback);
+  fs.mkdirSync(fallback, { recursive: true, mode: 0o755 });
+  return fallback;
+}
+
+const uploadDir = findWritableDir();
 
 if (useCloudinary) {
   const { v2: cloudinary } = require('cloudinary');
@@ -28,13 +55,16 @@ if (useCloudinary) {
 
   upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 } else {
-  const uploadDir = path.join(__dirname, '..', 'uploads');
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
-
   const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, uploadDir),
+    destination: (req, file, cb) => {
+      try {
+        fs.mkdirSync(uploadDir, { recursive: true, mode: 0o755 });
+        cb(null, uploadDir);
+      } catch (err) {
+        console.error('[upload] destination error:', err.message);
+        cb(err);
+      }
+    },
     filename: (req, file, cb) => {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
       cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
@@ -52,3 +82,4 @@ if (useCloudinary) {
 }
 
 module.exports = upload;
+module.exports.uploadDir = uploadDir;

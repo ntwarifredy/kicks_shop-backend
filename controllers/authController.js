@@ -139,10 +139,16 @@ const updateDetails = async (req, res, next) => {
 
 const updateAvatar = async (req, res, next) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: 'Please upload an image' });
+    let avatar;
+
+    if (req.body.avatarUrl) {
+      avatar = req.body.avatarUrl;
+    } else if (req.file) {
+      avatar = req.file.path || `/uploads/${req.file.filename}`;
+    } else {
+      return res.status(400).json({ success: false, message: 'Please provide an image URL or file' });
     }
-    const avatar = `/uploads/${req.file.filename}`;
+
     const user = await User.findByIdAndUpdate(
       req.user.id,
       { avatar },

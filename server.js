@@ -5,6 +5,7 @@ const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const errorHandler = require('./middleware/errorHandler');
 const connectDB = require('./config/db');
+const { uploadDir } = require('./middleware/upload');
 
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
@@ -21,7 +22,7 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(uploadDir));
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
@@ -40,6 +41,7 @@ app.post('/api/payments/webhook/stripe', express.raw({ type: 'application/json' 
   next();
 }, require('./controllers/paymentController').handleStripeWebhook);
 
+app.use('/api/upload', require('./routes/upload'));
 app.use('/api/payments', require('./routes/payment'));
 
 app.get('/api/placeholder', (req, res) => {
